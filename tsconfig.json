@@ -1,16 +1,18 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
-  "files": [],
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["src", "api"],
   "references": [
     {
-      "path": "./lib/db"
+      "path": "../../lib/db"
     },
     {
-      "path": "./lib/api-client-react"
-    },
-    {
-      "path": "./lib/api-zod"
+      "path": "../../lib/api-zod"
     }
   ]
 }
