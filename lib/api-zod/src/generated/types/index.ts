@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './healthStatus';
-export * from './listTemplatesParams';
-export * from './skill';
-export * from './skillInput';
-export * from './skillStats';
-export * from './skillUpdate';
-export * from './template';
+export * from './healthStatus.js';
+export * from './listTemplatesParams.js';
+export * from './skill.js';
+export * from './skillInput.js';
+export * from './skillStats.js';
+export * from './skillUpdate.js';
+export * from './template.js';
