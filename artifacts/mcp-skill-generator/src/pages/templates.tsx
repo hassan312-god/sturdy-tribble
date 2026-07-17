@@ -2,23 +2,38 @@ import { useState } from "react";
 import { useListTemplates } from "@workspace/api-client-react";
 import { Badge, Skeleton } from "@/components/ui/custom";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { FileCode, ArrowRight, Library, Search } from "lucide-react";
+import { useNotifications } from "@/lib/notifications";
 
 export default function TemplatesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const { data: templates, isLoading } = useListTemplates(
     activeCategory !== "all" ? { category: activeCategory } : undefined
   );
+  
+  const [, setLocation] = useLocation();
+  const { addNotification } = useNotifications();
 
   const categories = ["all", "database", "filesystem", "api", "cloud", "utility"];
+
+  const handleUseTemplate = (template: any) => {
+    localStorage.setItem("mcp-template-input", template.content || template.description || "");
+    addNotification({
+      title: "Template loaded",
+      message: `${template.name} loaded into the generator`,
+      type: "info",
+      link: "/generate"
+    });
+    setLocation("/generate");
+  };
 
   return (
     <div className="h-full flex flex-col bg-background">
       <header className="h-12 border-b flex items-center justify-between px-4 bg-background shrink-0">
         <div className="flex items-center gap-2">
           <Library className="w-4 h-4 text-muted-foreground" />
-          <h1 className="font-medium text-sm">Templates</h1>
+          <h1 className="font-medium text-sm font-display">Templates</h1>
         </div>
       </header>
 
@@ -26,7 +41,7 @@ export default function TemplatesPage() {
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight mb-1">Skill Templates</h2>
+              <h2 className="text-2xl font-bold tracking-tight mb-1 font-display">Skill Templates</h2>
               <p className="text-muted-foreground text-sm">
                 Pre-configured MCP server configs ready to generate.
               </p>
@@ -71,7 +86,7 @@ export default function TemplatesPage() {
               </p>
               <Button 
                 variant="outline" 
-                className="mt-6"
+                className="mt-6 font-sans"
                 onClick={() => setActiveCategory("all")}
               >
                 Clear Filters
@@ -96,9 +111,9 @@ export default function TemplatesPage() {
                       <FileCode className="w-3.5 h-3.5" />
                       Template
                     </div>
-                    <Link href="/dashboard" className="text-xs font-medium text-primary flex items-center group-hover:underline">
+                    <Button variant="ghost" className="text-xs font-medium text-primary flex items-center hover:bg-primary/10 h-8 px-2" onClick={() => handleUseTemplate(template)}>
                       Use <ArrowRight className="w-3 h-3 ml-1" />
-                    </Link>
+                    </Button>
                   </div>
                 </div>
               ))}

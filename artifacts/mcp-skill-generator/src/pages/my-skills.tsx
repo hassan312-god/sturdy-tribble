@@ -9,12 +9,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { CodeBlock } from "@/components/code-block";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNotifications } from "@/lib/notifications";
 
 export default function MySkillsPage() {
   const { data: skills, isLoading: isLoadingSkills } = useListSkills();
   const { data: stats, isLoading: isLoadingStats } = useGetSkillStats();
   const deleteSkill = useDeleteSkill();
   const queryClient = useQueryClient();
+  const { addNotification } = useNotifications();
 
   const [selectedSkill, setSelectedSkill] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -26,18 +28,23 @@ export default function MySkillsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDelete = (id: number, e: React.MouseEvent) => {
+  const handleDelete = (skill: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this skill?")) return;
     
-    deleteSkill.mutate({ id }, {
+    deleteSkill.mutate({ id: skill.id }, {
       onSuccess: () => {
         toast.success("Skill deleted");
         queryClient.invalidateQueries({ queryKey: getListSkillsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetSkillStatsQueryKey() });
-        if (selectedSkill?.id === id) {
+        if (selectedSkill?.id === skill.id) {
           setSelectedSkill(null);
         }
+        addNotification({
+          title: "Skill deleted",
+          message: `${skill.name} removed`,
+          type: "info"
+        });
       },
       onError: () => toast.error("Failed to delete skill")
     });
@@ -48,7 +55,7 @@ export default function MySkillsPage() {
       <header className="h-12 border-b flex items-center justify-between px-4 bg-background shrink-0">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-muted-foreground" />
-          <h1 className="font-medium text-sm">My Skills</h1>
+          <h1 className="font-medium text-sm font-display">My Skills</h1>
         </div>
       </header>
 
@@ -57,38 +64,38 @@ export default function MySkillsPage() {
           
           {/* Stats Bar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card border rounded-xl p-5 flex items-center gap-4">
+            <div className="bg-card border rounded-xl p-5 flex items-center gap-4 shadow-sm">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <FileText className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Skills</p>
                 {isLoadingStats ? <Skeleton className="h-8 w-16 mt-1" /> : (
-                  <h3 className="text-2xl font-bold">{stats?.totalSkills || 0}</h3>
+                  <h3 className="text-2xl font-bold font-display">{stats?.totalSkills || 0}</h3>
                 )}
               </div>
             </div>
             
-            <div className="bg-card border rounded-xl p-5 flex items-center gap-4">
+            <div className="bg-card border rounded-xl p-5 flex items-center gap-4 shadow-sm">
               <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
                 <Code2 className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Recently Generated</p>
                 {isLoadingStats ? <Skeleton className="h-8 w-16 mt-1" /> : (
-                  <h3 className="text-2xl font-bold">{stats?.recentCount || 0}</h3>
+                  <h3 className="text-2xl font-bold font-display">{stats?.recentCount || 0}</h3>
                 )}
               </div>
             </div>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold tracking-tight mb-4">Saved Library</h2>
+            <h2 className="text-xl font-bold font-display tracking-tight mb-4">Saved Library</h2>
             
             {isLoadingSkills ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border rounded-xl p-4 flex items-center gap-4">
+                  <div key={i} className="border rounded-xl p-4 flex items-center gap-4 bg-card">
                     <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-48" />
@@ -102,16 +109,16 @@ export default function MySkillsPage() {
                 <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
                   <Layers className="w-8 h-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Your library is empty</h3>
+                <h3 className="font-semibold text-lg mb-2 font-display">Your library is empty</h3>
                 <p className="text-muted-foreground text-sm max-w-md mb-6">
                   You haven't saved any skills yet. Go to the generator to create and save your first MCP skill.
                 </p>
-                <Link href="/dashboard">
-                  <Button>Go to Generator</Button>
+                <Link href="/generate">
+                  <Button className="font-sans">Go to Generator</Button>
                 </Link>
               </div>
             ) : (
-              <div className="bg-card border rounded-xl overflow-hidden divide-y">
+              <div className="bg-card border rounded-xl overflow-hidden divide-y shadow-sm">
                 {skills.map((skill) => (
                   <div 
                     key={skill.id} 
@@ -145,7 +152,7 @@ export default function MySkillsPage() {
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-                        onClick={(e) => handleDelete(skill.id, e)}
+                        onClick={(e) => handleDelete(skill, e)}
                         title="Delete skill"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -168,8 +175,8 @@ export default function MySkillsPage() {
               <SheetHeader className="p-6 pb-4 border-b shrink-0 bg-card/50">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <SheetTitle className="text-xl mb-1">{selectedSkill.name}</SheetTitle>
-                    <SheetDescription>
+                    <SheetTitle className="text-xl mb-1 font-display">{selectedSkill.name}</SheetTitle>
+                    <SheetDescription className="font-sans">
                       {selectedSkill.description || "Saved skill configuration"}
                     </SheetDescription>
                   </div>
@@ -177,7 +184,7 @@ export default function MySkillsPage() {
                     onClick={() => copySkill(selectedSkill.content)} 
                     variant="outline" 
                     size="sm"
-                    className="shrink-0"
+                    className="shrink-0 font-sans"
                   >
                     {copied ? <Check className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
                     {copied ? "Copied" : "Copy Content"}

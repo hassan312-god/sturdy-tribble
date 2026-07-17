@@ -10,8 +10,11 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
 import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
+import GeneratorPage from "@/pages/generator";
+import SettingsPage from "@/pages/settings";
 import TemplatesPage from "@/pages/templates";
 import MySkillsPage from "@/pages/my-skills";
+import { NotificationProvider } from "@/lib/notifications";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +50,7 @@ const clerkAppearance = {
     colorInput: "hsl(220 13% 18%)",
     colorInputForeground: "hsl(210 40% 98%)",
     colorNeutral: "hsl(220 13% 18%)",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     borderRadius: "0.5rem",
   },
   elements: {
@@ -183,6 +186,18 @@ function ClerkProviderWithRoutes() {
             </ProtectedRoute>
           </Route>
           
+          <Route path="/generate">
+            <ProtectedRoute>
+              <GeneratorPage />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/settings">
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          </Route>
+          
           <Route path="/templates">
             <ProtectedRoute>
               <TemplatesPage />
@@ -209,10 +224,12 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <ThemeProvider defaultTheme="dark">
-      <WouterRouter base={basePath}>
-        <ClerkProviderWithRoutes />
-      </WouterRouter>
-      <Toaster theme="system" position="bottom-right" className="font-sans" />
+      <NotificationProvider>
+        <WouterRouter base={basePath}>
+          <ClerkProviderWithRoutes />
+        </WouterRouter>
+        <Toaster theme="system" position="bottom-right" className="font-sans" />
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

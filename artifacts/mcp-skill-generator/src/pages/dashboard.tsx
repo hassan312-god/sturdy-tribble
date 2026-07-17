@@ -1,411 +1,212 @@
-import { useState, useEffect } from "react";
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
-import { Settings, Copy, Download, Terminal, History, X, ChevronRight, CheckCircle2, AlertCircle, Play, FileJson, AlignLeft, Layers, Save } from "lucide-react";
-import { toast } from "sonner";
+import { useGetSkillStats, useListSkills, useListTemplates } from "@workspace/api-client-react";
+import { BookOpen, Zap, Gauge, LayoutTemplate, Wand2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/custom";
-import { CodeBlock } from "@/components/code-block";
-import { generateSkillStream } from "@/lib/openai";
-import { getApiKey, setApiKey as saveApiKey, getHistory, addHistoryItem, SkillHistoryItem } from "@/lib/storage";
-import { detectFormat } from "@/lib/format-detector";
-import { cn } from "@/lib/utils";
-import { useCreateSkill } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { getListSkillsQueryKey, getGetSkillStatsQueryKey } from "@workspace/api-client-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Skeleton, Badge } from "@/components/ui/custom";
+import { Link, useLocation } from "wouter";
+import { useUser } from "@clerk/react";
+import { format } from "date-fns";
 
 export default function DashboardPage() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("gpt-4o-mini");
-  const [isSettingsOpen, setSettingsOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [history, setHistory] = useState<SkillHistoryItem[]>([]);
-  
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
+  const { user } = useUser();
+  const [, setLocation] = useLocation();
+  const { data: stats, isLoading: isLoadingStats } = useGetSkillStats();
+  const { data: skills, isLoading: isLoadingSkills } = useListSkills();
+  const { data: templates, isLoading: isLoadingTemplates } = useListTemplates();
 
-  // Save skill dialog
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [skillName, setSkillName] = useState("");
-  const [skillDesc, setSkillDesc] = useState("");
-  const createSkill = useCreateSkill();
-  const queryClient = useQueryClient();
+  const recentSkills = skills?.slice(0, 5) || [];
+  const popularTemplates = templates?.slice(0, 4) || [];
 
-  useEffect(() => {
-    setApiKey(getApiKey());
-    setHistory(getHistory());
-  }, []);
-
-  const format = detectFormat(input);
-
-  const handleGenerate = async () => {
-    if (!apiKey) {
-      toast.error("Please enter your OpenAI API key in settings");
-      setSettingsOpen(true);
-      return;
-    }
-    
-    setIsGenerating(true);
-    setOutput("");
-    let fullOutput = "";
-    
-    try {
-      const stream = generateSkillStream(apiKey, model, input);
-      for await (const chunk of stream) {
-        fullOutput += chunk;
-        setOutput(fullOutput);
-      }
-      
-      const updatedHistory = addHistoryItem(input, fullOutput);
-      setHistory(updatedHistory);
-      toast.success("Skill generated successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Generation failed");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(output);
-    toast.success("Copied to clipboard");
-  };
-
-  const downloadFile = () => {
-    const blob = new Blob([output], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "SKILL.md";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleSaveSkill = () => {
-    if (!output) return;
-    setIsSaveDialogOpen(true);
-    setSkillName("");
-    setSkillDesc("");
-  };
-
-  const submitSaveSkill = () => {
-    if (!skillName.trim()) {
-      toast.error("Name is required");
-      return;
-    }
-
-    const tokenCount = Math.round(output.length / 4);
-
-    createSkill.mutate({
-      data: {
-        name: skillName,
-        description: skillDesc,
-        content: output,
-        inputSnippet: input.slice(0, 100),
-        tokenCount
-      }
-    }, {
-      onSuccess: () => {
-        toast.success("Skill saved to library");
-        setIsSaveDialogOpen(false);
-        queryClient.invalidateQueries({ queryKey: getListSkillsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetSkillStatsQueryKey() });
-      },
-      onError: (err) => {
-        toast.error("Failed to save skill");
-      }
-    });
-  };
-
-  const testConnection = async () => {
-    setIsTesting(true);
-    setTestResult(null);
-    try {
-      const res = await fetch("https://api.openai.com/v1/models", {
-        headers: { "Authorization": `Bearer ${apiKey}` }
-      });
-      if (res.ok) {
-        setTestResult({ success: true, message: "Connection successful" });
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setTestResult({ success: false, message: err.error?.message || "Invalid API key" });
-      }
-    } catch (e: any) {
-      setTestResult({ success: false, message: e.message || "Network error" });
-    } finally {
-      setIsTesting(false);
-    }
+  const handleUseTemplate = (template: any) => {
+    localStorage.setItem("mcp-template-input", template.content || template.description || "");
+    setLocation("/generate");
   };
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden bg-background">
-      <header className="h-12 flex items-center justify-between px-4 bg-background shrink-0 border-b">
-        <h1 className="font-medium text-sm">Generator</h1>
-        <div className="flex items-center gap-2">
-          {!apiKey && (
-            <Badge variant="destructive" className="cursor-pointer" onClick={() => setSettingsOpen(true)}>
-              API Key Required
-            </Badge>
-          )}
-          <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} className="text-muted-foreground">
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
-      </header>
+    <div className="h-full flex flex-col bg-background overflow-auto p-6 md:p-8">
+      <div className="max-w-6xl mx-auto w-full space-y-8">
+        
+        <header>
+          <h1 className="text-3xl font-bold tracking-tight mb-2 font-display">
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.firstName || 'Developer'}
+          </h1>
+          <p className="text-muted-foreground">Here's what's happening with your MCP skills.</p>
+        </header>
 
-      <PanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-        {/* Left Panel: Input */}
-        <Panel defaultSize={50} minSize={30} className="flex flex-col relative bg-card/30">
-          <div className="h-10 border-b flex items-center px-4 justify-between bg-card shrink-0">
-            <div className="flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">MCP Config</span>
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            title="Total Skills" 
+            value={stats?.totalSkills ?? 0} 
+            icon={BookOpen} 
+            isLoading={isLoadingStats} 
+            color="text-indigo-500" 
+            bgColor="bg-indigo-500/10" 
+          />
+          <StatCard 
+            title="Generated This Week" 
+            value={stats?.recentCount ?? 0} 
+            icon={Zap} 
+            isLoading={isLoadingStats} 
+            color="text-emerald-500" 
+            bgColor="bg-emerald-500/10" 
+          />
+          <StatCard 
+            title="Tokens Saved" 
+            value={`~${((stats?.totalSkills || 0) * 850).toLocaleString()}`} 
+            icon={Gauge} 
+            isLoading={isLoadingStats} 
+            color="text-amber-500" 
+            bgColor="bg-amber-500/10" 
+          />
+          <StatCard 
+            title="Templates Available" 
+            value={templates?.length ?? 0} 
+            icon={LayoutTemplate} 
+            isLoading={isLoadingTemplates} 
+            color="text-blue-500" 
+            bgColor="bg-blue-500/10" 
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Skills (2/3 width) */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold font-display tracking-tight">Recent Skills</h2>
+              <Link href="/my-skills" className="text-sm font-medium text-primary hover:underline flex items-center">
+                View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
             </div>
-            {input.trim() && (
-              <Badge variant="secondary" className="text-[10px] uppercase font-mono py-0 h-5">
-                {format === "JSON" && <FileJson className="w-3 h-3 mr-1" />}
-                {format === "Text" && <AlignLeft className="w-3 h-3 mr-1" />}
-                {format === "Mixed" && <Layers className="w-3 h-3 mr-1" />}
-                {format}
-              </Badge>
-            )}
-          </div>
-          <div className="flex-1 flex flex-col relative">
-            <textarea
-              className="absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-[13px] leading-relaxed placeholder:text-muted-foreground/30 focus:ring-0"
-              placeholder={`{\n  "mcpServers": {\n    "filesystem": {\n      "command": "npx",\n      "args": [\n        "-y",\n        "@modelcontextprotocol/server-filesystem",\n        "/Users/username/Desktop"\n      ]\n    }\n  }\n}`}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              spellCheck={false}
-            />
-          </div>
-          <div className="p-3 border-t flex justify-between items-center bg-background shrink-0">
-            <div className="flex gap-2">
-              <Button 
-                variant={historyOpen ? "secondary" : "ghost"} 
-                size="sm" 
-                onClick={() => setHistoryOpen(!historyOpen)} 
-                title="History"
-                className="h-8 px-2"
-              >
-                <History className="w-4 h-4" />
-              </Button>
-            </div>
-            <Button 
-              onClick={handleGenerate} 
-              disabled={!input.trim() || !apiKey || isGenerating}
-              className="font-mono text-xs tracking-tight h-8 px-4"
-            >
-              {isGenerating ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-primary-foreground animate-pulse mr-2" />
-                  Generating...
-                </>
+            
+            <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+              {isLoadingSkills ? (
+                <div className="divide-y">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-lg" />
+                        <div className="space-y-2"><Skeleton className="w-32 h-4" /><Skeleton className="w-24 h-3" /></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentSkills.length === 0 ? (
+                <div className="p-8 text-center flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mb-3">
+                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold mb-1">No skills yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Generate your first MCP skill to see it here.</p>
+                  <Button onClick={() => setLocation("/generate")}>Generate Skill</Button>
+                </div>
               ) : (
-                <>
-                  <Play className="w-3 h-3 mr-2 fill-current" />
-                  Generate Skill
-                </>
-              )}
-            </Button>
-          </div>
-        </Panel>
-        
-        <PanelResizeHandle className="w-px bg-border hover:bg-primary/50 hover:w-[2px] active:bg-primary transition-all cursor-col-resize z-10" />
-        
-        {/* Right Panel: Output */}
-        <Panel defaultSize={50} minSize={30} className="flex flex-col bg-[#0a0c10] dark:bg-[#0a0c10] relative text-slate-200">
-          <div className="h-10 border-b flex items-center px-4 justify-between bg-card shrink-0">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SKILL.md</span>
-            <div className="flex gap-1.5">
-              {output && (
-                <Button variant="ghost" size="sm" onClick={handleSaveSkill} className="h-6 px-2 text-xs text-primary hover:bg-primary/10">
-                  <Save className="w-3 h-3 mr-1.5" /> Save to Library
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={copyToClipboard} disabled={!output} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground">
-                <Copy className="w-3 h-3 mr-1.5" /> Copy
-              </Button>
-              <Button variant="ghost" size="sm" onClick={downloadFile} disabled={!output} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground">
-                <Download className="w-3 h-3 mr-1.5" /> DL
-              </Button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto bg-transparent">
-            {output ? (
-              <CodeBlock code={output} />
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm font-mono flex-col gap-3 opacity-30 select-none">
-                <Terminal className="w-10 h-10 mb-2 stroke-1" />
-                <p>Waiting for generation...</p>
-              </div>
-            )}
-          </div>
-          {output && (
-            <div className="h-8 border-t border-white/5 flex items-center px-4 bg-transparent text-[10px] font-mono text-muted-foreground justify-end shrink-0">
-              <span className="opacity-50">~{Math.round(output.length / 4)} tokens</span>
-            </div>
-          )}
-        </Panel>
-
-        {historyOpen && (
-          <>
-            <PanelResizeHandle className="w-px bg-border hover:bg-primary/50 transition-all cursor-col-resize z-10" />
-            <Panel defaultSize={20} minSize={15} maxSize={40} className="bg-card border-l flex flex-col">
-              <div className="h-10 border-b flex items-center px-4 justify-between bg-background shrink-0">
-                <div className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">History</span>
-                </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => setHistoryOpen(false)}>
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto p-3 space-y-2">
-                {history.length === 0 ? (
-                  <div className="text-[11px] font-mono text-muted-foreground text-center p-4 border border-dashed rounded-md bg-background/50">
-                    No history yet
-                  </div>
-                ) : (
-                  history.map(item => (
-                    <button 
-                      key={item.id}
-                      onClick={() => { 
-                        setInput(item.fullInput || item.inputSnippet);
-                        setOutput(item.output); 
-                      }}
-                      className="w-full text-left p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors flex flex-col gap-2 group text-sm"
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-[10px] font-mono text-muted-foreground bg-card px-1.5 py-0.5 rounded">
-                          {new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                <div className="divide-y">
+                  {recentSkills.map(skill => (
+                    <div key={skill.id} className="p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm">{skill.name}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(skill.createdAt), "MMM d, yyyy")}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-[11px] font-mono text-foreground line-clamp-2 break-all opacity-80 leading-relaxed">
-                        {item.inputSnippet}
+                      <div className="flex items-center gap-4">
+                        {skill.tokenCount && (
+                          <Badge variant="secondary" className="font-mono text-[10px] hidden sm:inline-flex">
+                            ~{skill.tokenCount} tkns
+                          </Badge>
+                        )}
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setLocation("/my-skills")}>
+                          View
+                        </Button>
                       </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </Panel>
-          </>
-        )}
-      </PanelGroup>
-
-      {/* Settings Slide-over */}
-      {isSettingsOpen && (
-        <div className="absolute inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity animate-in fade-in" onClick={() => setSettingsOpen(false)} />
-          <div className="w-[340px] max-w-full bg-card border-l h-full flex flex-col relative animate-in slide-in-from-right duration-200 shadow-2xl">
-            <div className="h-12 border-b flex items-center px-4 justify-between bg-background">
-              <span className="font-semibold text-sm">Settings</span>
-              <button onClick={() => setSettingsOpen(false)} className="p-1.5 hover:bg-secondary rounded-md text-muted-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-5 flex flex-col gap-6">
-              <div className="space-y-3">
-                <Label className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold">OpenAI API Key</Label>
-                <Input 
-                  type="password" 
-                  value={apiKey} 
-                  onChange={(e) => {
-                    setApiKey(e.target.value);
-                    saveApiKey(e.target.value);
-                  }} 
-                  placeholder="sk-..." 
-                  className="font-mono text-sm h-10 bg-background"
-                />
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Keys are stored locally in your browser's localStorage and never sent anywhere except directly to OpenAI.
-                </p>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold">Model</Label>
-                <div className="relative">
-                  <select 
-                    value={model} 
-                    onChange={(e) => setModel(e.target.value)}
-                    className="flex h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
-                  >
-                    <option value="gpt-4o-mini">gpt-4o-mini</option>
-                    <option value="gpt-4o">gpt-4o</option>
-                  </select>
-                  <ChevronRight className="absolute right-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
-              <div className="pt-2 border-t">
-                <Button 
-                  variant="secondary" 
-                  className="w-full font-mono text-xs h-9 bg-background hover:bg-secondary"
-                  onClick={testConnection}
-                  disabled={!apiKey || isTesting}
-                >
-                  {isTesting ? "Testing..." : "Test Connection"}
-                </Button>
-                {testResult && (
-                  <div className={cn(
-                    "mt-3 text-xs p-3 rounded-md border font-mono flex items-start gap-2", 
-                    testResult.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-destructive/10 border-destructive/20 text-destructive"
-                  )}>
-                    {testResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
-                    <span className="leading-relaxed">{testResult.message}</span>
-                  </div>
-                )}
-              </div>
+          {/* Quick Actions (1/3 width) */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold font-display tracking-tight">Quick Actions</h2>
+            <div className="grid gap-3">
+              <Button className="w-full justify-start h-14 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md font-sans" onClick={() => setLocation("/generate")}>
+                <Wand2 className="w-5 h-5 mr-3" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold">New Skill</span>
+                  <span className="text-[10px] opacity-80 font-normal">Generate from config</span>
+                </div>
+              </Button>
+              <Button variant="outline" className="w-full justify-start h-14 bg-card font-sans shadow-sm" onClick={() => setLocation("/templates")}>
+                <LayoutTemplate className="w-5 h-5 mr-3 text-muted-foreground" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold">Browse Templates</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">Use pre-made server configs</span>
+                </div>
+              </Button>
+              <Button variant="outline" className="w-full justify-start h-14 bg-card font-sans shadow-sm" onClick={() => setLocation("/my-skills")}>
+                <BookOpen className="w-5 h-5 mr-3 text-muted-foreground" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold">View All Skills</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">Manage your generated skills</span>
+                </div>
+              </Button>
             </div>
           </div>
         </div>
-      )}
 
-      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Save Skill to Library</DialogTitle>
-            <DialogDescription>
-              Name your generated skill to access it later in My Skills.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Skill Name</Label>
-              <Input
-                id="name"
-                placeholder="e.g. Postgres DB MCP"
-                value={skillName}
-                onChange={(e) => setSkillName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Input
-                id="description"
-                placeholder="e.g. Read-only queries for pg database"
-                value={skillDesc}
-                onChange={(e) => setSkillDesc(e.target.value)}
-              />
-            </div>
+        {/* Popular Templates */}
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold font-display tracking-tight">Popular Templates</h2>
+            <Link href="/templates" className="text-sm font-medium text-primary hover:underline flex items-center">
+              View All <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={submitSaveSkill} disabled={createSkill.isPending || !skillName.trim()}>
-              {createSkill.isPending ? "Saving..." : "Save Skill"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {isLoadingTemplates ? (
+              [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)
+            ) : popularTemplates.map(template => (
+              <div key={template.id} className="bg-card border rounded-xl p-5 hover:border-primary/50 transition-colors flex flex-col shadow-sm">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-sm line-clamp-1" title={template.name}>{template.name}</h3>
+                  <Badge variant="secondary" className="text-[9px] uppercase tracking-wider font-mono">
+                    {template.category}
+                  </Badge>
+                </div>
+                <div className="flex-1" />
+                <Button size="sm" variant="secondary" className="w-full mt-4 font-sans text-xs" onClick={() => handleUseTemplate(template)}>
+                  Use Template
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon: Icon, isLoading, color, bgColor }: { title: string, value: string | number, icon: any, isLoading: boolean, color: string, bgColor: string }) {
+  return (
+    <div className="bg-card border rounded-xl p-5 shadow-sm">
+      <div className="flex items-center gap-4 mb-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${bgColor} ${color}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+      </div>
+      {isLoading ? (
+        <Skeleton className="h-8 w-20" />
+      ) : (
+        <div className="text-3xl font-bold font-display tracking-tight">{value}</div>
+      )}
     </div>
   );
 }

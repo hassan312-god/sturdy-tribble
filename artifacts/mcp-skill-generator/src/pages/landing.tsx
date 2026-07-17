@@ -10,7 +10,7 @@ export default function LandingPage() {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
             <Layers className="w-5 h-5" />
           </div>
-          <span className="font-semibold tracking-tight">MCP Skill Generator</span>
+          <span className="font-semibold tracking-tight font-display">MCP Skill Generator</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/sign-in" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -34,7 +34,7 @@ export default function LandingPage() {
             Developer Preview
           </Badge>
           
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-3xl mb-6 leading-[1.1]">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-3xl mb-6 leading-[1.1] font-display">
             From Config to Claude <br className="hidden md:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400">in 3 seconds flat.</span>
           </h1>
@@ -59,7 +59,7 @@ export default function LandingPage() {
         <section className="py-24 px-6 bg-card/30 border-y border-border/40">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight mb-4">Precision Engineering for AI Tooling</h2>
+              <h2 className="text-3xl font-bold tracking-tight mb-4 font-display">Precision Engineering for AI Tooling</h2>
               <p className="text-muted-foreground">Built by developers, for developers managing complex MCP integrations.</p>
             </div>
             
@@ -87,7 +87,7 @@ export default function LandingPage() {
         <section className="py-24 px-6">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 pr-8">
-              <h2 className="text-3xl font-bold tracking-tight leading-tight">Drop your config.<br/>Get the skill.</h2>
+              <h2 className="text-3xl font-bold tracking-tight leading-tight font-display">Drop your config.<br/>Get the skill.</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Most MCP configs are thousands of lines of boilerplate. Providing them directly to Claude eats context and confuses the model. Our generator acts as a compiler — reducing your config down to its functional essence.
               </p>
