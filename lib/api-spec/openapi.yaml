@@ -10,13 +10,16 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: skills
+    description: User saved skills
+  - name: templates
+    description: Pre-made skill templates
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,167 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /skills:
+    get:
+      operationId: listSkills
+      tags: [skills]
+      summary: List current user's saved skills
+      responses:
+        "200":
+          description: List of skills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Skill"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createSkill
+      tags: [skills]
+      summary: Save a new skill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkillInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "401":
+          description: Unauthorized
+
+  /skills/stats:
+    get:
+      operationId: getSkillStats
+      tags: [skills]
+      summary: Get user skill stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillStats"
+        "401":
+          description: Unauthorized
+
+  /skills/{id}:
+    get:
+      operationId: getSkill
+      tags: [skills]
+      summary: Get a skill by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Skill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateSkill
+      tags: [skills]
+      summary: Update a skill
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkillUpdate"
+      responses:
+        "200":
+          description: Updated skill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: deleteSkill
+      tags: [skills]
+      summary: Delete a skill
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all pre-made skill templates
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get a template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +198,83 @@ components:
       required:
         - status
 
+    Skill:
+      type: object
+      required: [id, name, content, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        content:
+          type: string
+        inputSnippet:
+          type: ["string", "null"]
+        tokenCount:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SkillInput:
+      type: object
+      required: [name, content]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        content:
+          type: string
+          minLength: 1
+        inputSnippet:
+          type: string
+        tokenCount:
+          type: integer
+
+    SkillUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        content:
+          type: string
+          minLength: 1
+        tokenCount:
+          type: integer
+
+    SkillStats:
+      type: object
+      required: [totalSkills, recentCount]
+      properties:
+        totalSkills:
+          type: integer
+        recentCount:
+          type: integer
+
+    Template:
+      type: object
+      required: [id, name, description, content, category, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
