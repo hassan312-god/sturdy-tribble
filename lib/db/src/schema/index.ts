@@ -1,2 +1,2 @@
-export * from "./skills";
-export * from "./templates";
+export * from "./skills.js";
+export * from "./templates.js";
