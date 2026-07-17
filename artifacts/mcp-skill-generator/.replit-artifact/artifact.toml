@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "MCP Skill Generator"
+version = "1.0.0"
+id = "artifacts/mcp-skill-generator"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24450
+
+[services.development]
+run = "pnpm --filter @workspace/mcp-skill-generator run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mcp-skill-generator", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mcp-skill-generator/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24450"
+BASE_PATH = "/"
