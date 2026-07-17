@@ -34,6 +34,14 @@ export default function GeneratorPage() {
   const queryClient = useQueryClient();
   const { addNotification } = useNotifications();
   const [, setLocation] = useLocation();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     setApiKey(getApiKey());
@@ -151,19 +159,20 @@ export default function GeneratorPage() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden bg-background">
-      <header className="h-12 flex items-center justify-between px-4 bg-background shrink-0 border-b">
-        <h1 className="font-medium text-sm font-display">Generator</h1>
-        <div className="flex items-center gap-2">
-          {!apiKey && (
-            <Badge variant="destructive" className="cursor-pointer" onClick={() => setLocation("/settings")}>
-              API Key Required
-            </Badge>
-          )}
-        </div>
-      </header>
+    <div className="h-full w-full flex flex-col overflow-hidden bg-background px-3 py-3 md:px-6 md:py-6">
+      <div className="flex flex-col h-full rounded-xl overflow-hidden border">
+        <header className="h-12 flex items-center justify-between px-4 bg-background shrink-0 border-b">
+          <h1 className="font-medium text-sm font-display">Generator</h1>
+          <div className="flex items-center gap-2">
+            {!apiKey && (
+              <Badge variant="destructive" className="cursor-pointer" onClick={() => setLocation("/settings")}>
+                API Key Required
+              </Badge>
+            )}
+          </div>
+        </header>
 
-      <PanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+        <PanelGroup direction={isMobile ? "vertical" : "horizontal"} className="flex-1 overflow-hidden">
         {/* Left Panel: Input */}
         <Panel defaultSize={50} minSize={30} className="flex flex-col relative bg-card/30">
           <div className="h-10 border-b flex items-center px-4 justify-between bg-card shrink-0">
@@ -189,7 +198,7 @@ export default function GeneratorPage() {
               spellCheck={false}
             />
           </div>
-          <div className="p-3 border-t flex justify-between items-center bg-background shrink-0">
+          <div className="p-3 border-t flex flex-wrap gap-2 justify-between items-center bg-background shrink-0">
             <div className="flex gap-2">
               <Button 
                 variant={historyOpen ? "secondary" : "ghost"} 
@@ -204,7 +213,7 @@ export default function GeneratorPage() {
             <Button 
               onClick={handleGenerate} 
               disabled={!input.trim() || isGenerating}
-              className="font-mono text-xs tracking-tight h-8 px-4"
+              className="font-mono text-xs tracking-tight h-8 px-4 w-full sm:w-auto"
             >
               {isGenerating ? (
                 <>
@@ -341,5 +350,6 @@ export default function GeneratorPage() {
         </DialogContent>
       </Dialog>
     </div>
+  </div>
   );
 }

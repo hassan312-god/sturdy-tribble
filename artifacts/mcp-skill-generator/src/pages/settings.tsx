@@ -43,14 +43,14 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-auto p-6 md:p-8">
-      <div className="max-w-3xl mx-auto w-full space-y-8">
+    <div className="h-full flex flex-col bg-background overflow-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 md:py-8 w-full space-y-6">
         <header>
           <h1 className="text-3xl font-bold tracking-tight mb-2 font-display">Settings</h1>
           <p className="text-muted-foreground">Manage your account, API keys, and application preferences.</p>
         </header>
 
-        <div className="grid gap-8">
+        <div className="grid gap-6">
           {/* Profile Section */}
           <section className="bg-card border rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
@@ -88,14 +88,14 @@ export default function SettingsPage() {
             <div className="space-y-6 max-w-xl">
               <div className="space-y-3">
                 <Label htmlFor="api-key" className="font-semibold">OpenAI API Key</Label>
-                <div className="relative flex items-center">
+                <div className="relative flex items-center flex-1 min-w-0">
                   <Input 
                     id="api-key"
                     type={showKey ? "text" : "password"} 
                     value={apiKey} 
                     onChange={(e) => setApiKey(e.target.value)} 
                     placeholder="sk-..." 
-                    className="font-mono pr-10"
+                    className="font-mono pr-10 flex-1 min-w-0"
                   />
                   <button 
                     className="absolute right-3 text-muted-foreground hover:text-foreground"
@@ -138,7 +138,7 @@ export default function SettingsPage() {
             <div className="space-y-8 max-w-xl">
               <div className="space-y-3">
                 <Label className="font-semibold">Theme</Label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button 
                     variant={theme === "light" ? "default" : "outline"} 
                     onClick={() => setTheme("light")}

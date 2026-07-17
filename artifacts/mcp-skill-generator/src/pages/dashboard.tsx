@@ -22,11 +22,11 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-auto p-6 md:p-8">
+    <div className="h-full flex flex-col bg-background overflow-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
       <div className="max-w-6xl mx-auto w-full space-y-8">
         
         <header>
-          <h1 className="text-3xl font-bold tracking-tight mb-2 font-display">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 font-display">
             Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.firstName || 'Developer'}
           </h1>
           <p className="text-muted-foreground">Here's what's happening with your MCP skills.</p>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Skills (2/3 width) */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4 min-w-0">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold font-display tracking-tight">Recent Skills</h2>
               <Link href="/my-skills" className="text-sm font-medium text-primary hover:underline flex items-center">
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-sm">{skill.name}</h4>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground hidden sm:block">
                             {format(new Date(skill.createdAt), "MMM d, yyyy")}
                           </p>
                         </div>
@@ -132,9 +132,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions (1/3 width) */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <h2 className="text-xl font-bold font-display tracking-tight">Quick Actions</h2>
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button className="w-full justify-start h-14 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md font-sans" onClick={() => setLocation("/generate")}>
                 <Wand2 className="w-5 h-5 mr-3" />
                 <div className="flex flex-col items-start">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Popular Templates */}
+          {/* Popular Templates */}
         <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold font-display tracking-tight">Popular Templates</h2>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {isLoadingTemplates ? (
               [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)
             ) : popularTemplates.map(template => (

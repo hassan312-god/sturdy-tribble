@@ -6,7 +6,7 @@ import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from '@clerk/r
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider, useTheme } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
 import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
@@ -83,17 +83,73 @@ const clerkAppearance = {
 };
 
 function SignInPage() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const appearance = {
+    theme: isDark ? shadcn : undefined,
+    variables: isDark ? {
+      colorBackground: "hsl(226 19% 10%)",
+      colorInput: "hsl(220 13% 18%)",
+      colorNeutral: "hsl(220 13% 18%)",
+      colorForeground: "hsl(210 40% 98%)",
+      colorMutedForeground: "hsl(215 20% 65%)",
+    } : {
+      colorBackground: "hsl(0 0% 98%)",
+      colorInput: "hsl(0 0% 94%)",
+      colorNeutral: "hsl(220 9% 46%)",
+      colorForeground: "hsl(222 47% 11%)",
+      colorMutedForeground: "hsl(215 16% 47%)",
+      colorPrimary: "hsl(239 84% 60%)",
+    },
+    elements: isDark ? {
+      cardBox: "bg-[#0d0f14] rounded-2xl w-[440px] max-w-full overflow-hidden shadow-2xl border border-white/5"
+    } : {
+      cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-2xl border border-gray-200",
+      formFieldInput: "bg-gray-50 border-gray-200 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-gray-400",
+      socialButtonsBlockButton: "border-gray-200 bg-white hover:bg-gray-50 text-gray-900"
+    }
+  };
+
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    <div className={`flex min-h-[100dvh] items-center justify-center px-4 ${isDark ? 'bg-[#0a0b10]' : 'bg-gray-50'}`}>
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} appearance={appearance} />
     </div>
   );
 }
 
 function SignUpPage() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const appearance = {
+    theme: isDark ? shadcn : undefined,
+    variables: isDark ? {
+      colorBackground: "hsl(226 19% 10%)",
+      colorInput: "hsl(220 13% 18%)",
+      colorNeutral: "hsl(220 13% 18%)",
+      colorForeground: "hsl(210 40% 98%)",
+      colorMutedForeground: "hsl(215 20% 65%)",
+    } : {
+      colorBackground: "hsl(0 0% 98%)",
+      colorInput: "hsl(0 0% 94%)",
+      colorNeutral: "hsl(220 9% 46%)",
+      colorForeground: "hsl(222 47% 11%)",
+      colorMutedForeground: "hsl(215 16% 47%)",
+      colorPrimary: "hsl(239 84% 60%)",
+    },
+    elements: isDark ? {
+      cardBox: "bg-[#0d0f14] rounded-2xl w-[440px] max-w-full overflow-hidden shadow-2xl border border-white/5"
+    } : {
+      cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-2xl border border-gray-200",
+      formFieldInput: "bg-gray-50 border-gray-200 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-gray-400",
+      socialButtonsBlockButton: "border-gray-200 bg-white hover:bg-gray-50 text-gray-900"
+    }
+  };
+
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+    <div className={`flex min-h-[100dvh] items-center justify-center px-4 ${isDark ? 'bg-[#0a0b10]' : 'bg-gray-50'}`}>
+      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} appearance={appearance} />
     </div>
   );
 }
