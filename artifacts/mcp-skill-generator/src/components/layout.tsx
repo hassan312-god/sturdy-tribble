@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { LayoutDashboard, Library, Layers, Sun, Moon, Menu, X, LogOut, Wand2, Settings as SettingsIcon, Bell, CheckCircle2, AlertCircle, Info, Check } from "lucide-react";
+import { LayoutDashboard, Library, Layers, Sun, Moon, Menu, X, LogOut, Wand2, Settings as SettingsIcon, Bell, CheckCircle2, AlertCircle, Info, Check, Zap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -121,7 +121,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Generate", href: "/generate", icon: Wand2 },
+    { label: "Generate (AI)", href: "/generate", icon: Wand2 },
+    { label: "Smart Builder", href: "/build", icon: Zap },
     { label: "Templates", href: "/templates", icon: Library },
     { label: "My Skills", href: "/my-skills", icon: Layers },
     { label: "Settings", href: "/settings", icon: SettingsIcon },
@@ -144,7 +145,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navItems.map((item) => {
-          const isActive = location === item.href;
+          const isActive = location === item.href || 
+          (item.href === "/templates" && location.startsWith("/templates/"));
           return (
             <Link key={item.href} href={item.href} className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",

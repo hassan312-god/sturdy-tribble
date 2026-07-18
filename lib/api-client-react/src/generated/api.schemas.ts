@@ -53,6 +53,12 @@ export interface Template {
   description: string;
   content: string;
   category: string;
+  /** @nullable */
+  author?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  tags?: string[] | null;
   createdAt: string;
 }
 

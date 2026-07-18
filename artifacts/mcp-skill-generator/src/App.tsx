@@ -13,7 +13,9 @@ import DashboardPage from "@/pages/dashboard";
 import GeneratorPage from "@/pages/generator";
 import SettingsPage from "@/pages/settings";
 import TemplatesPage from "@/pages/templates";
+import TemplateDetailPage from "@/pages/template-detail";
 import MySkillsPage from "@/pages/my-skills";
+import SmartBuilderPage from "@/pages/smart-builder";
 import { NotificationProvider } from "@/lib/notifications";
 
 const queryClient = new QueryClient();
@@ -254,9 +256,21 @@ function ClerkProviderWithRoutes() {
             </ProtectedRoute>
           </Route>
           
+          <Route path="/templates/:id">
+            <ProtectedRoute>
+              <TemplateDetailPage />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/templates">
             <ProtectedRoute>
               <TemplatesPage />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/build">
+            <ProtectedRoute>
+              <SmartBuilderPage />
             </ProtectedRoute>
           </Route>
           

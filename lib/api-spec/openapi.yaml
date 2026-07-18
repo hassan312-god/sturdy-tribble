@@ -275,6 +275,14 @@ components:
           type: string
         category:
           type: string
+        author:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        tags:
+          type: ["array", "null"]
+          items:
+            type: string
         createdAt:
           type: string
           format: date-time

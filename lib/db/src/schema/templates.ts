@@ -8,6 +8,9 @@ export const templatesTable = pgTable("templates", {
   description: text("description").notNull(),
   content: text("content").notNull(),
   category: text("category").notNull(),
+  author: text("author"),
+  sourceUrl: text("source_url"),
+  tags: text("tags").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
