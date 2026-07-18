@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @workspace/mcp-skill-generator run build",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build:serverless && pnpm --filter @workspace/mcp-skill-generator run build",
   "outputDirectory": "artifacts/mcp-skill-generator/dist/public",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
